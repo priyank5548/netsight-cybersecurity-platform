@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Scanner - Security Analysis</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #818cf8;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            color: var(--text-primary);
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 {
+            text-align: center;
+            margin-bottom: 8px;
+            font-size: 2.75rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary-color) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .subtitle { text-align: center; color: var(--text-muted); margin-bottom: 40px; font-size: 1rem; }
+        .header-actions { text-align: center; margin-bottom: 40px; }
+        .btn {
+            padding: 14px 28px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+            text-decoration: none;
+            display: inline-block;
+            margin: 0 8px;
+        }
+        .btn-home { background: var(--bg-tertiary); color: var(--text-primary); }
+        .btn-home:hover { background: #475569; transform: translateY(-2px); }
+        .btn-scan { background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%); color: white; }
+        .btn-scan:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.4); }
+        .btn-scan:disabled { opacity: 0.6; cursor: not-allowed; }
+        .btn-pag { padding: 8px 16px; font-size: 0.9rem; margin: 4px; }
+        .section {
+            background: var(--bg-secondary);
+            padding: 24px;
+            margin-bottom: 20px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+        }
+        .section h2 {
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            font-size: 1.25rem;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--border-color);
+        }
+        .form-group { margin-bottom: 16px; }
+        .form-label { color: var(--text-muted); font-weight: 600; margin-bottom: 8px; font-size: 0.875rem; display: block; }
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 1rem;
+        }
+        .form-input:focus { outline: none; border-color: var(--primary-color); }
+        .form-actions { display: flex; gap: 16px; margin-top: 20px; }
+        .loading { display: none; text-align: center; padding: 40px; }
+        .loading.active { display: block; }
+        .spinner {
+            border: 4px solid var(--border-color);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            width: 50px; height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .results { display: none; }
+        .results.active { display: block; }
+        .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+        .info-card {
+            background: var(--bg-tertiary);
+            padding: 16px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+        .info-label { color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; margin-bottom: 6px; }
+        .info-value { color: var(--text-primary); font-size: 0.95rem; font-family: 'Roboto Mono', monospace; word-break: break-all; }
+        .list-item {
+            padding: 10px 12px;
+            margin: 6px 0;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+            word-break: break-all;
+        }
+        .list-item:hover { background: #3f4b5f; }
+        .list-item a { color: var(--primary-light); text-decoration: none; }
+        .list-item a:hover { text-decoration: underline; }
+        .pagination-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-color);
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .pagination-info { color: var(--text-muted); font-size: 0.9rem; }
+        .risk-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        .risk-minimal { background: rgba(16, 185, 129, 0.2); color: var(--success-color); }
+        .risk-low { background: rgba(99, 102, 241, 0.2); color: var(--primary-light); }
+        .risk-medium { background: rgba(245, 158, 11, 0.2); color: var(--warning-color); }
+        .risk-high { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
+        .risk-critical { background: rgba(220, 38, 38, 0.2); color: #fca5a5; }
+        .error-message {
+            background: rgba(239, 68, 68, 0.1);
+            border: 2px solid var(--danger-color);
+            color: #fca5a5;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        .data-table th, .data-table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        .data-table th { color: var(--text-muted); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; }
+        .scroll-list { max-height: 300px; overflow-y: auto; }
+        .scroll-list::-webkit-scrollbar { width: 8px; }
+        .scroll-list::-webkit-scrollbar-track { background: var(--bg-primary); border-radius: 4px; }
+        .scroll-list::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+        .sec-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; }
+        .sec-card { background: var(--bg-tertiary); padding: 16px; border-radius: 10px; text-align: center; }
+        .sec-card .val { font-size: 1.1rem; font-weight: 600; margin-bottom: 4px; }
+        .sec-card .lbl { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; }
+        @media (max-width: 768px) { h1 { font-size: 2rem; } .section { padding: 20px; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>URL Scanner</h1>
+        <p class="subtitle">Enter a URL (with or without scheme) or an IP address and click Scan</p>
+        <div class="header-actions">
+            <a href="/" class="btn btn-home">← Home</a>
+        </div>
+
+        <div class="section">
+            <h2>Scan Target</h2>
+            <form id="urlForm">
+                <div class="form-group">
+                    <label class="form-label">URL or IP</label>
+                    <input type="text" class="form-input" id="urlInput" placeholder="https://example.com or example.com or 8.8.8.8" required>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-scan" id="scanBtn">Scan</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="loading section" id="loading">
+            <div class="spinner"></div>
+            <div style="color: var(--text-secondary); margin-top: 16px;">Scanning DNS, WHOIS, links, subdomains, SSL...</div>
+        </div>
+
+        <div class="results" id="results"></div>
+    </div>
+
+    <script>
+        const PAGE_SIZE = 10;
+
+        function esc(s) {
+            const d = document.createElement('div');
+            d.textContent = s == null ? '' : String(s);
+            return d.innerHTML;
+        }
+
+        function paginate(containerId, items, page, renderFn, emptyMsg) {
+            const c = document.getElementById(containerId);
+            if (!c) return;
+            const total = items.length;
+            const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+            const p = Math.max(1, Math.min(page, totalPages));
+            const start = (p - 1) * PAGE_SIZE;
+            const chunk = items.slice(start, start + PAGE_SIZE);
+
+            let html = '<div class="scroll-list">';
+            if (chunk.length === 0) {
+                html += '<div class="list-item" style="color: var(--text-muted);">' + esc(emptyMsg || 'No items') + '</div>';
+            } else {
+                chunk.forEach(item => html += renderFn(item));
+            }
+            html += '</div><div class="pagination-bar">';
+            html += '<span class="pagination-info">' + (total > 0 ? `Showing ${start + 1}-${Math.min(start + PAGE_SIZE, total)} of ${total}` : '0 items') + '</span>';
+            html += '<div>';
+            if (p > 1) html += '<button type="button" class="btn btn-pag btn-home" data-p="' + (p - 1) + '">Prev</button>';
+            if (p < totalPages) html += '<button type="button" class="btn btn-pag btn-scan" data-p="' + (p + 1) + '">Next</button>';
+            html += '</div></div>';
+            c.innerHTML = html;
+            c.querySelectorAll('[data-p]').forEach(btn => {
+                btn.onclick = () => paginate(containerId, items, parseInt(btn.dataset.p, 10), renderFn, emptyMsg);
+            });
+        }
+
+        document.getElementById('urlForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const url = document.getElementById('urlInput').value.trim();
+            if (!url) { alert('Please enter a URL or IP'); return; }
+            const scanBtn = document.getElementById('scanBtn');
+            const loading = document.getElementById('loading');
+            const results = document.getElementById('results');
+            scanBtn.disabled = true;
+            loading.classList.add('active');
+            results.classList.remove('active');
+            results.innerHTML = '';
+
+            fetch('/api/url-scan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: url })
+            })
+            .then(r => r.json())
+            .then(data => {
+                loading.classList.remove('active');
+                scanBtn.disabled = false;
+                if (data.status === 'error') {
+                    results.innerHTML = '<div class="error-message">' + esc(data.error) + '</div>';
+                } else {
+                    renderResults(data);
+                }
+                results.classList.add('active');
+            })
+            .catch(err => {
+                loading.classList.remove('active');
+                scanBtn.disabled = false;
+                results.innerHTML = '<div class="error-message">' + esc(err.message) + '</div>';
+                results.classList.add('active');
+            });
+        });
+
+        function renderResults(d) {
+            const risk = (d.risk_level || 'Unknown').toLowerCase().replace(/\s/g, '-');
+            let html = '';
+
+            html += '<div class="section"><h2>Target Summary</h2><div class="info-grid">';
+            html += '<div class="info-card"><div class="info-label">Type</div><div class="info-value">URL / Domain</div></div>';
+            html += '<div class="info-card"><div class="info-label">Host</div><div class="info-value">' + esc(d.target) + '</div></div>';
+            html += '<div class="info-card"><div class="info-label">Normalized Target</div><div class="info-value">' + esc(d.normalized_target || d.target) + '</div></div>';
+            html += '<div class="info-card"><div class="info-label">Scan Timestamp</div><div class="info-value">' + esc(d.scan_timestamp || '') + '</div></div>';
+            if (d.ip) html += '<div class="info-card"><div class="info-label">IP</div><div class="info-value">' + esc(d.ip) + '</div></div>';
+            if (d.ip_info && (d.ip_info.country || d.ip_info.isp)) {
+                const loc = [d.ip_info.country, d.ip_info.regionName, d.ip_info.city].filter(function(x){ return x; }).join(' — ');
+                html += '<div class="info-card"><div class="info-label">IP Geolocation</div><div class="info-value">' + esc(loc) + '</div></div>';
+            }
+            if (d.hosting_provider || (d.ip_info && d.ip_info.isp)) {
+                html += '<div class="info-card"><div class="info-label">Hosting / ISP</div><div class="info-value">' + esc(d.hosting_provider || d.ip_info?.isp) + '</div></div>';
+            }
+            if (d.reverse_dns) html += '<div class="info-card"><div class="info-label">Reverse DNS</div><div class="info-value">' + esc(d.reverse_dns) + '</div></div>';
+            html += '</div></div>';
+
+            html += '<div class="section"><h2>Security Score</h2><div class="sec-grid">';
+            html += '<div class="sec-card"><div class="val"><span class="risk-badge risk-' + risk + '">' + (d.risk_score ?? 0) + '</span></div><div class="lbl">' + esc(d.risk_level || 'Unknown') + '</div></div>';
+            html += '<div class="sec-card"><div class="val">' + (d.ssl_info?.valid_until || 'N/A') + '</div><div class="lbl">SSL Cert</div></div>';
+            const missing = ['content-security-policy','x-frame-options','strict-transport-security'].filter(h => !Object.keys(d.headers || {}).some(k => k.toLowerCase() === h)).length;
+            html += '<div class="sec-card"><div class="val">' + missing + ' Missing</div><div class="lbl">Headers</div></div>';
+            html += '<div class="sec-card"><div class="val">' + ((d.dns_records && d.dns_records.NS && d.dns_records.NS.length) ? 'Active' : 'Unknown') + '</div><div class="lbl">DNSSEC</div></div>';
+            html += '</div></div>';
+
+            const dr = d.dns_records || {};
+            if (Object.keys(dr).length) {
+                html += '<div class="section"><h2>DNS Records</h2><div class="info-grid">';
+                ['A','AAAA','NS','MX','TXT'].forEach(t => {
+                    const v = dr[t] || [];
+                    if (v.length) html += '<div class="info-card"><div class="info-label">' + t + '</div><div class="info-value">' + v.map(x => esc(x)).join('<br>') + '</div></div>';
+                });
+                html += '</div></div>';
+            }
+
+            if (d.final_url) html += '<div class="section"><h2>Redirect</h2><div class="info-card"><div class="info-label">Final destination</div><div class="info-value">' + esc(d.final_url) + '</div></div><div class="info-label">HTTPS forced: ' + (d.https_forced ? 'Yes' : 'No') + '</div></div>';
+
+            const who = d.whois || {};
+            if (who.registrar || who.whois) {
+                html += '<div class="section"><h2>WHOIS / Registration</h2><div class="info-grid">';
+                html += '<div class="info-card"><div class="info-label">Registrar</div><div class="info-value">' + esc(who.registrar) + '</div></div>';
+                html += '<div class="info-card"><div class="info-label">Registered On</div><div class="info-value">' + esc(who.registered_on) + '</div></div>';
+                html += '<div class="info-card"><div class="info-label">Expires On</div><div class="info-value">' + esc(who.expires_on) + '</div></div>';
+                html += '<div class="info-card"><div class="info-label">Updated On</div><div class="info-value">' + esc(who.updated_on) + '</div></div>';
+                html += '<div class="info-card"><div class="info-label">Status</div><div class="info-value">' + esc(Array.isArray(who.status) ? who.status.join(', ') : who.status) + '</div></div>';
+                html += '<div class="info-card"><div class="info-label">DNSSEC</div><div class="info-value">' + esc(who.dnssec || '—') + '</div></div>';
+                if (who.name_server_ips && Object.keys(who.name_server_ips).length) {
+                    html += '<div class="info-card" style="grid-column:1/-1;"><div class="info-label">Name server IPs</div><div id="ns-container"></div></div>';
+                }
+                if (who.registrant && Object.values(who.registrant).some(Boolean)) {
+                    html += '<div class="info-card"><div class="info-label">Registrant</div><div class="info-value">' + esc(JSON.stringify(who.registrant)) + '</div></div>';
+                }
+                if (who.whois_raw) {
+                    html += '<div class="info-card" style="grid-column:1/-1;"><div class="info-label">Raw WHOIS</div><div class="scroll-list" style="max-height:200px; font-size:0.8rem;">' + esc(who.whois_raw) + '</div></div>';
+                }
+                html += '</div></div>';
+            }
+
+            const links = d.links || [];
+            html += '<div class="section"><h2>Link Grabber (' + links.length + ' links)</h2><div id="links-container"></div></div>';
+
+            const paths = d.view_paths || [];
+            html += '<div class="section"><h2>View Path List (' + paths.length + ' paths)</h2><div id="paths-container"></div></div>';
+
+            const subs = d.subdomains || [];
+            html += '<div class="section"><h2>Discovered Subdomains (' + subs.length + ')</h2><div id="subs-container"></div></div>';
+
+            const scripts = d.scripts || [];
+            html += '<div class="section"><h2>Scripts & Objects — JS Files (' + scripts.length + ')</h2><div id="scripts-container"></div></div>';
+
+            if ((d.iframes || []).length) {
+                html += '<div class="section"><h2>Iframes (' + d.iframes.length + ')</h2><div id="iframes-container"></div></div>';
+            }
+
+            html += '<div class="section"><h2>Email Security</h2><div class="info-grid">';
+            const es = d.email_security || {};
+            html += '<div class="info-card"><div class="info-label">SPF</div><div class="info-value">' + esc(es.spf || 'Missing/Unknown') + '</div></div>';
+            html += '<div class="info-card"><div class="info-label">DMARC</div><div class="info-value">' + esc(es.dmarc || 'Missing/Unknown') + '</div></div>';
+            if (es.dkim && Object.keys(es.dkim).length) {
+                html += '<div class="info-card" style="grid-column:1/-1;"><div class="info-label">DKIM selectors</div><div class="info-value">' + Object.entries(es.dkim).map(([k,v]) => k + ': ' + (v ? 'Found' : 'Not found')).join(', ') + '</div></div>';
+            }
+            html += '</div></div>';
+
+            html += '<div class="section"><h2>Infrastructure & Risk Analysis</h2>';
+            html += '<div class="sec-grid" style="margin-bottom:16px;"><div class="sec-card"><div class="val"><span class="risk-badge risk-' + risk + '">' + (d.risk_score ?? 0) + ' — ' + esc(d.risk_level) + '</span></div><div class="lbl">Risk Score</div></div></div>';
+            const ports = d.ports || {};
+            if (Object.keys(ports).length) {
+                html += '<h3 style="margin-bottom:12px; font-size:1rem;">Port Reachability</h3><table class="data-table"><thead><tr><th>Port</th><th>Open</th><th>Service</th><th>Banner</th></tr></thead><tbody>';
+                Object.entries(ports).forEach(([p, info]) => {
+                    html += '<tr><td>' + esc(p) + '</td><td>' + (info.open ? 'Yes' : 'No') + '</td><td>' + esc(info.service || '') + '</td><td>' + esc(info.banner || '') + '</td></tr>';
+                });
+                html += '</tbody></table>';
+            }
+            html += '</div>';
+
+            const tech = d.technology || {};
+            if (Object.keys(tech).length) {
+                html += '<div class="section"><h2>Target Technologies</h2><div class="info-grid">';
+                Object.entries(tech).forEach(([k, v]) => {
+                    if (v) html += '<div class="info-card"><div class="info-label">' + esc(k) + '</div><div class="info-value">' + esc(Array.isArray(v) ? v.join(', ') : v) + '</div></div>';
+                });
+                if (d.final_url) html += '<div class="info-card"><div class="info-label">Final URL</div><div class="info-value">' + esc(d.final_url) + '</div></div>';
+                html += '</div></div>';
+            }
+
+            const hdrs = d.headers || {};
+            if (Object.keys(hdrs).length) {
+                html += '<div class="section"><h2>Response Headers</h2><div class="scroll-list" style="max-height:300px;">';
+                Object.entries(hdrs).slice(0, 30).forEach(([k, v]) => {
+                    html += '<div class="list-item"><strong>' + esc(k) + ':</strong> ' + esc(String(v).substring(0, 150)) + '</div>';
+                });
+                html += '</div></div>';
+            }
+
+            document.getElementById('results').innerHTML = html;
+
+            paginate('links-container', links, 1, u => '<div class="list-item"><a href="' + esc(u) + '" target="_blank" rel="noopener">' + esc(u) + '</a></div>', 'No links found');
+            paginate('paths-container', paths, 1, p => '<div class="list-item">' + esc(p) + '</div>', 'No paths');
+            paginate('subs-container', subs, 1, s => '<div class="list-item">' + esc(s) + '</div>', 'No subdomains found');
+            paginate('scripts-container', scripts, 1, s => '<div class="list-item">' + esc(s) + '</div>', 'No scripts');
+            if (d.iframes && d.iframes.length) {
+                paginate('iframes-container', d.iframes, 1, f => '<div class="list-item">' + esc(f) + '</div>', 'No iframes');
+            }
+            if (who.name_server_ips && Object.keys(who.name_server_ips).length) {
+                const nsList = Object.entries(who.name_server_ips).map(([n, ips]) => n + ': ' + (ips && ips.length ? ips.join(', ') : '—'));
+                const nc = document.getElementById('ns-container');
+                if (nc) {
+                    nc.innerHTML = '<div class="scroll-list">' + nsList.map(x => '<div class="list-item">' + esc(x) + '</div>').join('') + '</div>';
+                }
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory & Process Analysis</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #818cf8;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            color: var(--text-primary);
+            padding: 40px 20px;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: var(--text-primary);
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 2.75rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary-color) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .header-actions {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .btn {
+            padding: 14px 28px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+            letter-spacing: 0.025em;
+            display: inline-block;
+            text-decoration: none;
+            margin: 0 8px;
+        }
+        
+        .btn-home {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+        
+        .btn-home:hover {
+            background: #475569;
+            transform: translateY(-2px);
+        }
+        
+        .btn-refresh {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            color: white;
+        }
+        
+        .btn-refresh:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.4);
+        }
+        
+        .section {
+            background: var(--bg-secondary);
+            padding: 32px;
+            margin-bottom: 24px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .section:hover {
+            border-color: var(--primary-color);
+        }
+        
+        .section h2 {
+            color: var(--text-primary);
+            margin-bottom: 24px;
+            font-size: 1.5rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--border-color);
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        
+        .info-card {
+            background: var(--bg-tertiary);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+        
+        .info-card:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+        
+        .info-label {
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .info-value {
+            color: var(--text-primary);
+            font-size: 1.5rem;
+            font-weight: 700;
+            font-family: 'Roboto Mono', monospace;
+        }
+        
+        .info-value.small {
+            font-size: 1.1rem;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 8px;
+        }
+        
+        .badge-success {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success-color);
+        }
+        
+        .badge-warning {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning-color);
+        }
+        
+        .badge-danger {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger-color);
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 12px;
+            background: var(--bg-primary);
+            border-radius: 6px;
+            overflow: hidden;
+            margin-top: 12px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+            border-radius: 6px;
+        }
+        
+        .progress-success {
+            background: linear-gradient(90deg, var(--success-color), #34d399);
+        }
+        
+        .progress-warning {
+            background: linear-gradient(90deg, var(--warning-color), #fbbf24);
+        }
+        
+        .progress-danger {
+            background: linear-gradient(90deg, var(--danger-color), #f87171);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+        }
+        
+        thead {
+            background: var(--bg-primary);
+        }
+        
+        th {
+            padding: 14px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            border-bottom: 2px solid var(--border-color);
+        }
+        
+        td {
+            padding: 14px;
+            border-bottom: 1px solid var(--border-color);
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+        }
+        
+        tbody tr {
+            transition: all 0.2s ease;
+        }
+        
+        tbody tr:hover {
+            background: var(--bg-tertiary);
+        }
+        
+        .warning-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .warning-item {
+            padding: 12px 16px;
+            margin: 8px 0;
+            background: var(--bg-tertiary);
+            border-left: 4px solid var(--warning-color);
+            border-radius: 6px;
+        }
+        
+        .timestamp {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin-bottom: 20px;
+        }
+        
+        /* Loading Spinner */
+        .loader {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border: 5px solid var(--border-color);
+            border-top: 5px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .loading-text {
+            margin-top: 20px;
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+        
+        .process-table-container {
+            max-height: 500px;
+            overflow-y: auto;
+            margin-top: 16px;
+        }
+        
+        .process-table-container::-webkit-scrollbar {
+            width: 10px;
+        }
+        
+        .process-table-container::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+            border-radius: 5px;
+        }
+        
+        .process-table-container::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 5px;
+        }
+        
+        .process-table-container::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-dark);
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 2px solid var(--danger-color);
+            color: #fca5a5;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            font-weight: 500;
+        }
+        
+        /* Search Bar */
+        .search-container {
+            margin-bottom: 20px;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 14px 20px;
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+        
+        .search-input::placeholder {
+            color: var(--text-muted);
+        }
+        
+        /* Action Button */
+        .btn-action {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .btn-action:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(99, 102, 241, 0.3);
+        }
+        
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .modal-content {
+            background: var(--bg-secondary);
+            margin: 5% auto;
+            padding: 0;
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            width: 80%;
+            max-width: 800px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+            animation: slideDown 0.3s ease;
+        }
+        
+        @keyframes slideDown {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            padding: 24px 32px;
+            border-radius: 16px 16px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h2 {
+            margin: 0;
+            color: white;
+            font-size: 1.5rem;
+            border: none;
+            padding: 0;
+        }
+        
+        .close {
+            color: white;
+            font-size: 32px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+            transition: all 0.2s;
+        }
+        
+        .close:hover {
+            transform: scale(1.2);
+        }
+        
+        .modal-body {
+            padding: 32px;
+        }
+        
+        .tree-item {
+            margin: 16px 0;
+            padding: 16px;
+            background: var(--bg-tertiary);
+            border-radius: 10px;
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .tree-item.parent {
+            border-left-color: var(--warning-color);
+        }
+        
+        .tree-item.current {
+            border-left-color: var(--success-color);
+            background: rgba(16, 185, 129, 0.1);
+        }
+        
+        .tree-item.child {
+            border-left-color: var(--primary-light);
+            margin-left: 30px;
+        }
+        
+        .tree-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+        
+        .tree-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-top: 8px;
+        }
+        
+        .tree-info-item {
+            color: var(--text-secondary);
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+        }
+        
+        .tree-info-item strong {
+            color: var(--text-primary);
+        }
+        
+        .no-data {
+            color: var(--text-muted);
+            font-style: italic;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 20px 10px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .section {
+                padding: 20px;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1> Memory & Process Forensic Analysis</h1>
+        
+        <div class="header-actions">
+            <a href="/" class="btn btn-home"> Home</a>
+            <button onclick="location.reload()" class="btn btn-refresh"> Refresh Analysis</button>
+        </div>
+        
+        <div id="timestamp" class="timestamp"></div>
+        
+        <!-- STAGE 1: System Summary, Memory Health, RAM Details -->
+        <div id="basic-info" class="section">
+            <div class="loading-container">
+                <div class="loader"></div>
+                <div class="loading-text">Loading system information...</div>
+            </div>
+        </div>
+        
+        <!-- STAGE 2: Top Memory Consumers -->
+        <div id="top-processes-section" class="section hidden">
+            <h2> Top Memory Consumers</h2>
+            <div class="loading-container">
+                <div class="loader"></div>
+                <div class="loading-text">Analyzing top memory consumers...</div>
+            </div>
+        </div>
+        
+        <!-- STAGE 3: All Processes -->
+        <div id="all-processes-section" class="section hidden">
+            <h2> All Running Processes</h2>
+            <div class="loading-container">
+                <div class="loader"></div>
+                <div class="loading-text">Loading all processes...</div>
+            </div>
+        </div>
+        
+        <!-- STAGE 4: Memory Sampling -->
+        <div id="sampling-section" class="section hidden">
+            <h2> Memory Sampling (10 Seconds)</h2>
+            <div class="loading-container">
+                <div class="loader"></div>
+                <div class="loading-text">Sampling memory usage... <span id="sampling-progress">0/10</span></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Process Tree Modal -->
+    <div id="processTreeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2> Process Tree</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <div class="loading-container">
+                    <div class="loader"></div>
+                    <div class="loading-text">Loading process tree...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Progressive loading system
+        async function loadRAMAnalysis() {
+            try {
+                // STAGE 1: Load basic info (fast)
+                await loadBasicInfo();
+                
+                // STAGE 2: Load top processes
+                await loadTopProcesses();
+                
+                // STAGE 3: Load all processes
+                await loadAllProcesses();
+                
+                // STAGE 4: Memory sampling
+                await loadMemorySampling();
+                
+            } catch (error) {
+                console.error('Error loading RAM analysis:', error);
+            }
+        }
+        
+        // Stage 1: Basic System Info
+        async function loadBasicInfo() {
+            try {
+                const response = await fetch('/api/ram/basic');
+                const data = await response.json();
+                
+                if (data.error) {
+                    document.getElementById('basic-info').innerHTML = `
+                        <div class="error">Error: ${data.error}</div>
+                    `;
+                    return;
+                }
+                
+                // Update timestamp
+                document.getElementById('timestamp').innerHTML = ` Analysis Timestamp: ${data.timestamp}`;
+                
+                // Render basic info sections
+                const html = `
+                    <!-- SYSTEM SUMMARY -->
+                    <div style="margin-bottom: 40px;">
+                        <h2> System Summary</h2>
+                        <div class="info-grid">
+                            <div class="info-card">
+                                <div class="info-label">Operating System</div>
+                                <div class="info-value small">${data.system_summary.os}</div>
+                            </div>
+                            <div class="info-card">
+                                <div class="info-label">Architecture</div>
+                                <div class="info-value small">${data.system_summary.architecture}</div>
+                            </div>
+                            <div class="info-card">
+                                <div class="info-label">CPU Cores (Logical)</div>
+                                <div class="info-value">${data.system_summary.cpu_logical}</div>
+                            </div>
+                            <div class="info-card">
+                                <div class="info-label">CPU Cores (Physical)</div>
+                                <div class="info-value">${data.system_summary.cpu_physical}</div>
+                            </div>
+                            <div class="info-card">
+                                <div class="info-label">Total RAM</div>
+                                <div class="info-value">${data.system_summary.total_ram} GB</div>
+                            </div>
+                            <div class="info-card">
+                                <div class="info-label">System Uptime</div>
+                                <div class="info-value">${data.system_summary.uptime_hours} hrs</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- MEMORY HEALTH -->
+                    <div style="margin-bottom: 40px;">
+                        <h2> Memory Health Status</h2>
+                        <div class="info-grid">
+                            <div class="info-card">
+                                <div class="info-label">RAM Usage</div>
+                                <div class="info-value">${data.memory_health.ram_usage}%</div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill ${getProgressClass(data.memory_health.ram_usage)}" 
+                                         style="width: ${data.memory_health.ram_usage}%"></div>
+                                </div>
+                            </div>
+                            <div class="info-card">
+                                <div class="info-label">Swap Usage</div>
+                                <div class="info-value">${data.memory_health.swap_usage}%</div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill ${getSwapProgressClass(data.memory_health.swap_usage)}" 
+                                         style="width: ${data.memory_health.swap_usage}%"></div>
+                                </div>
+                            </div>
+                            <div class="info-card">
+                                <div class="info-label">Memory Pressure</div>
+                                <div class="info-value small">${data.memory_health.pressure}</div>
+                                <span class="badge badge-${data.memory_health.level}">${data.memory_health.level}</span>
+                            </div>
+                        </div>
+                        ${renderWarnings(data.memory_health.warnings)}
+                    </div>
+                    
+                    <!-- RAM DETAILS -->
+                    <div>
+                        <h2> Detailed RAM Breakdown</h2>
+                        <div class="info-grid">
+                            <div class="info-card">
+                                <div class="info-label">Total RAM</div>
+                                <div class="info-value">${data.ram_details.total} GB</div>
+                            </div>
+                            <div class="info-card">
+                                <div class="info-label">Available</div>
+                                <div class="info-value">${data.ram_details.available} GB</div>
+                            </div>
+                            <div class="info-card">
+                                <div class="info-label">Used</div>
+                                <div class="info-value">${data.ram_details.used} GB</div>
+                            </div>
+                            <div class="info-card">
+                                <div class="info-label">Free</div>
+                                <div class="info-value">${data.ram_details.free} GB</div>
+                            </div>
+                            ${data.ram_details.active > 0 ? `
+                            <div class="info-card">
+                                <div class="info-label">Active</div>
+                                <div class="info-value">${data.ram_details.active} GB</div>
+                            </div>` : ''}
+                            ${data.ram_details.cached > 0 ? `
+                            <div class="info-card">
+                                <div class="info-label">Cached</div>
+                                <div class="info-value">${data.ram_details.cached} GB</div>
+                            </div>` : ''}
+                        </div>
+                        
+                        <h3 style="color: var(--text-secondary); margin: 32px 0 16px; font-size: 1.2rem;">💾 Swap Memory</h3>
+                        <div class="info-grid">
+                            <div class="info-card">
+                                <div class="info-label">Swap Total</div>
+                                <div class="info-value">${data.ram_details.swap_total} GB</div>
+                            </div>
+                            <div class="info-card">
+                                <div class="info-label">Swap Used</div>
+                                <div class="info-value">${data.ram_details.swap_used} GB</div>
+                            </div>
+                            <div class="info-card">
+                                <div class="info-label">Swap Free</div>
+                                <div class="info-value">${data.ram_details.swap_free} GB</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('basic-info').innerHTML = html;
+            } catch (error) {
+                document.getElementById('basic-info').innerHTML = `
+                    <div class="error">Error loading basic info: ${error.message}</div>
+                `;
+            }
+        }
+        
+        // Stage 2: Top Processes
+        async function loadTopProcesses() {
+            document.getElementById('top-processes-section').classList.remove('hidden');
+            
+            try {
+                const response = await fetch('/api/ram/top-processes');
+                const data = await response.json();
+                
+                if (data.error) {
+                    document.getElementById('top-processes-section').innerHTML = `
+                        <h2> Top Memory Consumers</h2>
+                        <div class="error">Error: ${data.error}</div>
+                    `;
+                    return;
+                }
+                
+                const html = `
+                    <h2> Top Memory Consumers</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>PID</th>
+                                <th>Process Name</th>
+                                <th>Memory (MB)</th>
+                                <th>Memory %</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.top_processes.map(proc => `
+                                <tr>
+                                    <td>${proc.pid}</td>
+                                    <td>${proc.name}</td>
+                                    <td>${proc.memory_mb}</td>
+                                    <td>${proc.memory_percent}%</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+                
+                document.getElementById('top-processes-section').innerHTML = html;
+            } catch (error) {
+                document.getElementById('top-processes-section').innerHTML = `
+                    <h2> Top Memory Consumers</h2>
+                    <div class="error">Error: ${error.message}</div>
+                `;
+            }
+        }
+        
+        // Stage 3: All Processes (paginated loading)
+        async function loadAllProcesses() {
+            document.getElementById('all-processes-section').classList.remove('hidden');
+            
+            const container = document.getElementById('all-processes-section');
+            let page = 0;
+            let allProcesses = [];
+            
+            try {
+                // Start loading pages
+                while (true) {
+                    const response = await fetch(`/api/ram/all-processes?page=${page}`);
+                    const data = await response.json();
+                    
+                    if (data.error) break;
+                    
+                    allProcesses = allProcesses.concat(data.processes);
+                    
+                    // Update display with current processes
+                    const html = `
+                        <h2> All Running Processes (${allProcesses.length}/${data.total})</h2>
+                        
+                        <div class="search-container">
+                            <input type="text" 
+                                   id="processSearch" 
+                                   class="search-input" 
+                                   placeholder=" Search by PID or Process Name..." 
+                                   onkeyup="filterProcesses()">
+                        </div>
+                        
+                        <div class="process-table-container">
+                            <table id="processTable">
+                                <thead>
+                                    <tr>
+                                        <th>PID</th>
+                                        <th>Process Name</th>
+                                        <th>Memory (MB)</th>
+                                        <th>Memory %</th>
+                                        <th>CPU %</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${allProcesses.map(proc => `
+                                        <tr class="process-row">
+                                            <td>${proc.pid}</td>
+                                            <td>${proc.name}</td>
+                                            <td>${proc.memory_mb}</td>
+                                            <td>${proc.memory_percent}%</td>
+                                            <td>${proc.cpu_percent}%</td>
+                                            <td>
+                                                <button class="btn-action" onclick="showProcessTree(${proc.pid}, '${proc.name}')">
+                                                     Tree
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                        ${data.has_more ? '<div class="loading-container"><div class="loading-text">Loading more processes...</div></div>' : ''}
+                    `;
+                    
+                    container.innerHTML = html;
+                    
+                    if (!data.has_more) break;
+                    page++;
+                    
+                    // Small delay between pages
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+            } catch (error) {
+                container.innerHTML = `
+                    <h2> All Running Processes</h2>
+                    <div class="error">Error: ${error.message}</div>
+                `;
+            }
+        }
+        
+        // Filter processes by search input
+        function filterProcesses() {
+            const searchInput = document.getElementById('processSearch').value.toLowerCase();
+            const table = document.getElementById('processTable');
+            const rows = table.getElementsByClassName('process-row');
+            
+            for (let row of rows) {
+                const pid = row.cells[0].textContent.toLowerCase();
+                const name = row.cells[1].textContent.toLowerCase();
+                
+                if (pid.includes(searchInput) || name.includes(searchInput)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+        }
+        
+        // Show process tree in modal
+        async function showProcessTree(pid, processName) {
+            const modal = document.getElementById('processTreeModal');
+            const modalBody = document.getElementById('modalBody');
+            
+            // Show modal with loading indicator
+            modal.style.display = 'block';
+            modalBody.innerHTML = `
+                <div class="loading-container">
+                    <div class="loader"></div>
+                    <div class="loading-text">Loading process tree for PID ${pid}...</div>
+                </div>
+            `;
+            
+            try {
+                const response = await fetch(`/api/ram/process-tree/${pid}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    modalBody.innerHTML = `<div class="error">${data.error}</div>`;
+                    return;
+                }
+                
+                // Build the tree HTML
+                let html = '';
+                
+                // Parent process
+                if (data.parent) {
+                    html += `
+                        <div class="tree-item parent">
+                            <div class="tree-label">⬆ PARENT PROCESS</div>
+                            <div class="tree-info">
+                                <div class="tree-info-item"><strong>PID:</strong> ${data.parent.pid}</div>
+                                <div class="tree-info-item"><strong>Name:</strong> ${data.parent.name}</div>
+                                <div class="tree-info-item"><strong>Memory:</strong> ${data.parent.memory_mb} MB</div>
+                                <div class="tree-info-item"><strong>CPU:</strong> ${data.parent.cpu_percent}%</div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    html += `<div class="tree-item parent"><div class="no-data">No parent process (root level)</div></div>`;
+                }
+                
+                // Current process
+                html += `
+                    <div class="tree-item current">
+                        <div class="tree-label"> CURRENT PROCESS</div>
+                        <div class="tree-info">
+                            <div class="tree-info-item"><strong>PID:</strong> ${data.current.pid}</div>
+                            <div class="tree-info-item"><strong>Name:</strong> ${data.current.name}</div>
+                            <div class="tree-info-item"><strong>Memory:</strong> ${data.current.memory_mb} MB</div>
+                            <div class="tree-info-item"><strong>CPU:</strong> ${data.current.cpu_percent}%</div>
+                            <div class="tree-info-item"><strong>Status:</strong> ${data.current.status}</div>
+                            <div class="tree-info-item"><strong>Started:</strong> ${data.current.create_time}</div>
+                        </div>
+                    </div>
+                `;
+                
+                // Child processes
+                if (data.children && data.children.length > 0) {
+                    html += `<div style="margin-top: 16px;"><div class="tree-label" style="padding-left: 30px;">⬇️ CHILD PROCESSES (${data.children.length})</div>`;
+                    data.children.forEach(child => {
+                        html += `
+                            <div class="tree-item child">
+                                <div class="tree-info">
+                                    <div class="tree-info-item"><strong>PID:</strong> ${child.pid}</div>
+                                    <div class="tree-info-item"><strong>Name:</strong> ${child.name}</div>
+                                    <div class="tree-info-item"><strong>Memory:</strong> ${child.memory_mb} MB</div>
+                                    <div class="tree-info-item"><strong>CPU:</strong> ${child.cpu_percent}%</div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += `</div>`;
+                } else {
+                    html += `<div class="tree-item child" style="margin-left: 30px;"><div class="no-data">No child processes</div></div>`;
+                }
+                
+                modalBody.innerHTML = html;
+            } catch (error) {
+                modalBody.innerHTML = `<div class="error">Error loading process tree: ${error.message}</div>`;
+            }
+        }
+        
+        // Close modal
+        function closeModal() {
+            document.getElementById('processTreeModal').style.display = 'none';
+        }
+        
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('processTreeModal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+        
+        // Stage 4: Memory Sampling with real-time updates
+        async function loadMemorySampling() {
+            document.getElementById('sampling-section').classList.remove('hidden');
+            
+            const eventSource = new EventSource('/api/ram/sampling?duration=10');
+            let samples = [];
+            
+            eventSource.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                
+                if (data.complete) {
+                    // Final result
+                    eventSource.close();
+                    
+                    const html = `
+                        <h2> Memory Sampling Results</h2>
+                        <div class="info-grid">
+                            <div class="info-card">
+                                <div class="info-label">Peak Usage</div>
+                                <div class="info-value">${data.peak}%</div>
+                            </div>
+                            <div class="info-card">
+                                <div class="info-label">Average Usage</div>
+                                <div class="info-value">${data.average}%</div>
+                            </div>
+                            <div class="info-card">
+                                <div class="info-label">Lowest Usage</div>
+                                <div class="info-value">${data.lowest}%</div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.getElementById('sampling-section').innerHTML = html;
+                } else {
+                    // Update progress
+                    document.getElementById('sampling-progress').textContent = `${data.index}/${data.total}`;
+                    samples.push(data.sample);
+                }
+            };
+            
+            eventSource.onerror = function() {
+                eventSource.close();
+                document.getElementById('sampling-section').innerHTML = `
+                    <h2> Memory Sampling</h2>
+                    <div class="error">Error during sampling</div>
+                `;
+            };
+        }
+        
+        // Helper functions
+        function getProgressClass(value) {
+            if (value < 60) return 'progress-success';
+            if (value < 80) return 'progress-warning';
+            return 'progress-danger';
+        }
+        
+        function getSwapProgressClass(value) {
+            if (value < 20) return 'progress-success';
+            if (value < 50) return 'progress-warning';
+            return 'progress-danger';
+        }
+        
+        function renderWarnings(warnings) {
+            if (!warnings || warnings.length === 0) return '';
+            
+            return `
+                <div style="margin-top: 24px;">
+                    <h3 style="color: var(--text-secondary); margin-bottom: 12px; font-size: 1.1rem;">⚠️ Health Warnings</h3>
+                    <ul class="warning-list">
+                        ${warnings.map(w => `<li class="warning-item">${w}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+        
+        // Start loading on page load
+        window.addEventListener('DOMContentLoaded', loadRAMAnalysis);
+    </script>
+</body>
+</html>

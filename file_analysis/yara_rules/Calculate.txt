@@ -1,0 +1,25 @@
+total (828)
+
+
+reversing-lab-yara-rules (310)
+	backdoor (30)
+	certificate (1)
+	downloader (1)
+	exploit (1)
+	infostealer (8)
+	pua (1)
+	ransomware (249)
+	rootkit (1)
+	trojan (10)
+	virus (8)
+
+virtustotal-yara-rules (407)
+	#open_files (363)
+	operation blockbuster (44)
+
+bart-blaze-yara-rules (111)
+	APT (13)
+	crimeware (34)
+	generic (21)
+	hacktools (23)
+	ransomware (20)

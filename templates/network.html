@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Analysis - Final Project</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #818cf8;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            color: var(--text-primary);
+            padding: 40px 20px;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: var(--text-primary);
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 2.75rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary-color) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .control-panel {
+            background: var(--bg-secondary);
+            padding: 32px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 24px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .control-panel:hover {
+            border-color: var(--primary-color);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 14px 28px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+            letter-spacing: 0.025em;
+        }
+
+        .btn-scan {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            color: white;
+        }
+
+        .btn-scan:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-scan:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-home {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .btn-home:hover {
+            background: #475569;
+            transform: translateY(-2px);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 24px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid var(--border-color);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+
+        .loading-subtext {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .results {
+            display: none;
+        }
+
+        .results.active {
+            display: block;
+        }
+
+        .section {
+            background: var(--bg-secondary);
+            padding: 32px;
+            margin-bottom: 24px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .section:hover {
+            border-color: var(--primary-color);
+        }
+
+        .section h2 {
+            color: var(--text-primary);
+            margin-bottom: 24px;
+            font-size: 1.5rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .info-item {
+            padding: 20px;
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .info-item:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        .info-label {
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .info-value {
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        .device-card {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .device-card:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(99, 102, 241, 0.2);
+        }
+
+        .device-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .device-ip {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-light);
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        .device-os {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .device-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+        }
+
+        .detail-item {
+            padding: 16px;
+            background: #0f172a;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+
+        .detail-value {
+            color: var(--text-primary);
+            margin-top: 8px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+        }
+
+        .ports-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .port-badge {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success-color);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border: 1px solid var(--success-color);
+        }
+
+        .error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 2px solid var(--danger-color);
+            color: #fca5a5;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            font-weight: 500;
+        }
+
+        .no-devices {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 20px 10px;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .section {
+                padding: 20px;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .device-details {
+                grid-template-columns: 1fr;
+            }
+
+            .btn-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Network Analysis Toolkit</h1>
+
+        <div class="control-panel">
+            <div class="btn-group">
+                <button class="btn btn-scan" onclick="startScan()" id="scanBtn">Start Network Scan</button>
+                <button class="btn btn-home" onclick="window.location.href='/'">Home</button>
+            </div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <div class="loading-text">Scanning network... This may take a few moments.</div>
+            <div class="loading-subtext">Discovering devices and analyzing services...</div>
+        </div>
+
+        <div class="results" id="results">
+            <!-- Network info will be inserted here -->
+        </div>
+    </div>
+
+    <script>
+        let scanInProgress = false;
+
+        function startScan() {
+            if (scanInProgress) return;
+            
+            const scanBtn = document.getElementById('scanBtn');
+            const results = document.getElementById('results');
+
+            // Disable button
+            scanBtn.disabled = true;
+            scanBtn.textContent = 'Scanning...';
+            scanInProgress = true;
+            results.classList.remove('active');
+            results.innerHTML = '';
+
+            // Phase 1: Show loading state
+            displayInitialLoading();
+
+            // Phase 2: Load network info first
+            loadNetworkInfo()
+                .then(() => {
+                    // Phase 3: Load devices progressively
+                    return loadDevicesStream();
+                })
+                .then(() => {
+                    scanBtn.disabled = false;
+                    scanBtn.textContent = 'Start Network Scan';
+                    scanInProgress = false;
+                })
+                .catch(error => {
+                    const results = document.getElementById('results');
+                    results.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+                    results.classList.add('active');
+                    scanBtn.disabled = false;
+                    scanBtn.textContent = 'Start Network Scan';
+                    scanInProgress = false;
+                });
+        }
+
+        function displayInitialLoading() {
+            const results = document.getElementById('results');
+            results.innerHTML = `
+                <div class="section">
+                    <h2>Network Information</h2>
+                    <div style="display: flex; align-items: center; gap: 16px; padding: 20px;">
+                        <div class="spinner" style="width: 30px; height: 30px; margin: 0;"></div>
+                        <div style="color: var(--text-secondary);">Loading network information...</div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2 id="devices-title">Discovered Devices</h2>
+                    <div style="display: flex; align-items: center; gap: 16px; padding: 20px;">
+                        <div class="spinner" style="width: 30px; height: 30px; margin: 0;"></div>
+                        <div style="color: var(--text-secondary);">Waiting for network information...</div>
+                    </div>
+                </div>
+            `;
+            results.classList.add('active');
+        }
+
+        function loadNetworkInfo() {
+            return fetch('/api/network/info')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'error') {
+                        throw new Error(data.error);
+                    }
+                    displayNetworkInfo(data.network_info);
+                });
+        }
+
+        function displayNetworkInfo(networkInfo) {
+            const infoHtml = `
+                <h2>Network Information</h2>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">Local IP Address</div>
+                        <div class="info-value">${networkInfo.local_ip}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Network Range</div>
+                        <div class="info-value">${networkInfo.network_range}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Public IP</div>
+                        <div class="info-value">${networkInfo.public_ip}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">ISP</div>
+                        <div class="info-value">${networkInfo.isp}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Location</div>
+                        <div class="info-value">${networkInfo.city}, ${networkInfo.region}, ${networkInfo.country}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">ASN</div>
+                        <div class="info-value">${networkInfo.asn}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">DHCP Servers</div>
+                        <div class="info-value">${networkInfo.dhcp_servers.length > 0 ? networkInfo.dhcp_servers.join(', ') : 'None detected'}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">DNS Servers</div>
+                        <div class="info-value">${networkInfo.dns_servers.length > 0 ? networkInfo.dns_servers.join(', ') : 'None detected'}</div>
+                    </div>
+                </div>
+            `;
+
+            const results = document.getElementById('results');
+            const sections = results.querySelectorAll('.section');
+            if (sections.length > 0) {
+                sections[0].innerHTML = infoHtml;
+            }
+        }
+
+        function loadDevicesStream() {
+            return new Promise((resolve, reject) => {
+                const eventSource = new EventSource('/api/network/devices');
+                let totalDevices = 0;
+                let loadedCount = 0;
+                const deviceContainer = document.getElementById('devices-container');
+                
+                if (!deviceContainer) {
+                    const results = document.getElementById('results');
+                    const sections = results.querySelectorAll('.section');
+                    if (sections.length < 2) {
+                        reject(new Error('Device section not found'));
+                        return;
+                    }
+                    
+                    const deviceSection = sections[1];
+                    deviceSection.innerHTML = `
+                        <h2 id="devices-title">Discovered Devices</h2>
+                        <div id="devices-container">
+                            <div style="display: flex; align-items: center; gap: 16px; padding: 20px;">
+                                <div class="spinner" style="width: 30px; height: 30px; margin: 0;"></div>
+                                <div style="color: var(--text-secondary);">Discovering devices...</div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                eventSource.onmessage = (event) => {
+                    try {
+                        const device = JSON.parse(event.data);
+
+                        if (device.error) {
+                            eventSource.close();
+                            reject(new Error(device.error));
+                            return;
+                        }
+
+                        if (device.total !== undefined) {
+                            totalDevices = device.total;
+                            const container = document.getElementById('devices-container');
+                            if (totalDevices === 0) {
+                                container.innerHTML = '<div class="no-devices">No devices found on the network</div>';
+                            } else {
+                                container.innerHTML = `
+                                    <div style="display: flex; align-items: center; gap: 16px; padding: 20px;">
+                                        <div class="spinner" style="width: 30px; height: 30px; margin: 0;"></div>
+                                        <div style="color: var(--text-secondary);">Scanning <strong style="color: var(--primary-color);">${totalDevices}</strong> device(s)...</div>
+                                    </div>
+                                `;
+                            }
+                            return;
+                        }
+
+                        // Device arrived
+                        if (device.ip) {
+                            loadedCount++;
+                            const container = document.getElementById('devices-container');
+
+                            // Clear loading on first device
+                            if (loadedCount === 1) {
+                                container.innerHTML = '';
+                            }
+
+                            const deviceCard = createDeviceCard(device);
+                            container.innerHTML += deviceCard;
+
+                            // Update progress
+                            document.getElementById('devices-title').textContent = 
+                                `Discovered Devices (${loadedCount}/${totalDevices})`;
+                        }
+                    } catch (error) {
+                        console.error('Error parsing device:', error);
+                    }
+                };
+
+                eventSource.onerror = () => {
+                    eventSource.close();
+                    if (loadedCount > 0 || totalDevices === 0) {
+                        resolve(); // Success - at least some devices loaded or no devices found
+                    } else {
+                        reject(new Error('Failed to load devices'));
+                    }
+                };
+            });
+        }
+
+        function createDeviceCard(device) {
+            return `
+                <div class="device-card">
+                    <div class="device-header">
+                        <div class="device-ip">${device.ip}</div>
+                        <div class="device-os">${device.os_guess}</div>
+                    </div>
+                    <div class="device-details">
+                        <div class="detail-item">
+                            <div class="detail-label">Hostname</div>
+                            <div class="detail-value">${device.hostname}</div>
+                        </div>
+                        ${device.netbios_name ? `
+                        <div class="detail-item">
+                            <div class="detail-label">NetBIOS Name</div>
+                            <div class="detail-value">${device.netbios_name}</div>
+                        </div>
+                        ` : ''}
+                        <div class="detail-item">
+                            <div class="detail-label">Open Ports</div>
+                            <div class="ports-list">
+                                ${device.open_ports.length > 0 ? 
+                                    device.open_ports.map(port => `<span class="port-badge">${port}</span>`).join('') :
+                                    '<span style="color: var(--text-muted);">None detected</span>'
+                                }
+                            </div>
+                        </div>
+                        ${device.snmp_info ? `
+                        <div class="detail-item">
+                            <div class="detail-label">SNMP Info</div>
+                            <div class="detail-value" style="font-size: 0.85rem; word-break: break-word;">${device.snmp_info}</div>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

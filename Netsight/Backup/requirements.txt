@@ -1,0 +1,12 @@
+streamlit>=1.18.0
+requests
+dnspython
+tldextract
+whois
+ipwhois
+python-dateutil
+pyOpenSSL
+beautifulsoup4
+
+# Optional (if you want richer whois handling):
+# python-whois

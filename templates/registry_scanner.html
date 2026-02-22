@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registry Security Scanner - Defense Cybersecurity</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #818cf8;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --critical-color: #dc2626;
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            color: var(--text-primary);
+            padding: 40px 20px;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .container { max-width: 1400px; margin: 0 auto; }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 8px;
+            font-size: 2.75rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary-color) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 40px;
+            font-size: 1rem;
+        }
+
+        .header-actions { text-align: center; margin-bottom: 40px; }
+
+        .btn {
+            padding: 14px 28px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+            text-decoration: none;
+            display: inline-block;
+            margin: 0 8px;
+        }
+
+        .btn-home {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+        .btn-home:hover { background: #475569; transform: translateY(-2px); }
+
+        .btn-scan {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            color: white;
+        }
+        .btn-scan:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.4);
+        }
+        .btn-scan:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .section {
+            background: var(--bg-secondary);
+            padding: 32px;
+            margin-bottom: 24px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+        }
+
+        .section h2 {
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            font-size: 1.4rem;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .loading { display: none; text-align: center; padding: 40px; }
+        .loading.active { display: block; }
+
+        .spinner {
+            border: 4px solid var(--border-color);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .loading-text { font-size: 1.1rem; color: var(--text-secondary); margin-bottom: 8px; }
+        .loading-subtext { font-size: 0.9rem; color: var(--text-muted); }
+
+        .results { display: none; }
+        .results.active { display: block; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--bg-tertiary);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .stat-number { font-size: 1.75rem; font-weight: 700; margin-bottom: 4px; }
+        .stat-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+        .stat-card.critical .stat-number { color: var(--critical-color); }
+        .stat-card.high .stat-number { color: var(--danger-color); }
+        .stat-card.medium .stat-number { color: var(--warning-color); }
+        .stat-card.ok .stat-number { color: var(--success-color); }
+
+        .severity-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .severity-critical { background: rgba(220, 38, 38, 0.2); color: #fca5a5; border: 1px solid var(--critical-color); }
+        .severity-high { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid var(--danger-color); }
+        .severity-medium { background: rgba(245, 158, 11, 0.2); color: #fcd34d; border: 1px solid var(--warning-color); }
+        .severity-low { background: rgba(99, 102, 241, 0.2); color: var(--primary-light); border: 1px solid var(--primary-color); }
+
+        .finding-item {
+            background: var(--bg-tertiary);
+            padding: 16px 20px;
+            margin-bottom: 12px;
+            border-radius: 10px;
+            border-left: 4px solid var(--border-color);
+        }
+        .finding-item.severity-critical { border-left-color: var(--critical-color); }
+        .finding-item.severity-high { border-left-color: var(--danger-color); }
+        .finding-item.severity-medium { border-left-color: var(--warning-color); }
+        .finding-item.severity-low { border-left-color: var(--primary-color); }
+
+        .finding-type { font-weight: 600; color: var(--text-primary); margin-bottom: 6px; }
+        .finding-location { font-size: 0.85rem; color: var(--text-muted); font-family: 'Roboto Mono', monospace; margin-bottom: 4px; }
+        .finding-value { font-size: 0.9rem; color: var(--text-secondary); font-family: 'Roboto Mono', monospace; word-break: break-all; margin: 8px 0; }
+        .finding-reason { font-size: 0.9rem; color: var(--warning-color); margin-top: 8px; }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        .data-table th, .data-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .data-table th { color: var(--text-muted); font-weight: 600; text-transform: uppercase; font-size: 0.75rem; }
+        .data-table tr:hover { background: rgba(99, 102, 241, 0.05); }
+
+        .error-message {
+            background: rgba(239, 68, 68, 0.1);
+            border: 2px solid var(--danger-color);
+            color: #fca5a5;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+
+        .filter-tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+        .filter-tab {
+            padding: 8px 16px;
+            border-radius: 8px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .filter-tab:hover, .filter-tab.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .empty-state { text-align: center; padding: 30px; color: var(--text-muted); }
+        .info-note { font-size: 0.85rem; color: var(--text-muted); margin-top: 12px; }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 2rem; }
+            .section { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Registry Security Scanner</h1>
+        <p class="subtitle">Defense cybersecurity – detect malicious activity, persistence mechanisms & anomalies in Windows registry</p>
+
+        <div class="header-actions">
+            <a href="/" class="btn btn-home"> Home</a>
+            <button type="button" class="btn btn-scan" id="scanBtn">Scan Registry</button>
+        </div>
+
+        <div class="loading section" id="loading">
+            <div class="spinner"></div>
+            <div class="loading-text">Scanning Windows Registry...</div>
+            <div class="loading-subtext">Checking startup, Winlogon, AppInit_DLLs, IFEO, LSA, services & more</div>
+        </div>
+
+        <div class="results" id="results"></div>
+    </div>
+
+    <script>
+        document.getElementById('scanBtn').addEventListener('click', startScan);
+
+        function startScan() {
+            const scanBtn = document.getElementById('scanBtn');
+            const loading = document.getElementById('loading');
+            const results = document.getElementById('results');
+
+            scanBtn.disabled = true;
+            loading.classList.add('active');
+            results.classList.remove('active');
+            results.innerHTML = '';
+
+            fetch('/api/registry-scanner/scan')
+                .then(r => r.json())
+                .then(data => {
+                    loading.classList.remove('active');
+                    scanBtn.disabled = false;
+
+                    if (data.status === 'error') {
+                        results.innerHTML = `<div class="error-message">Error: ${escapeHtml(data.error)}</div>`;
+                        results.classList.add('active');
+                        return;
+                    }
+                    displayResults(data);
+                })
+                .catch(err => {
+                    loading.classList.remove('active');
+                    scanBtn.disabled = false;
+                    results.innerHTML = `<div class="error-message">Error: ${escapeHtml(err.message)}</div>`;
+                    results.classList.add('active');
+                });
+        }
+
+        function escapeHtml(s) {
+            const div = document.createElement('div');
+            div.textContent = String(s);
+            return div.innerHTML;
+        }
+
+        function displayResults(data) {
+            const stats = data.statistics || {};
+            const summary = data.anomaly_summary || {};
+            const suspicious = data.suspicious_entries || [];
+
+            let html = `
+                <div class="section">
+                    <h2>Summary</h2>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-number">${stats.total_startup_programs || 0}</div>
+                            <div class="stat-label">Startup</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">${stats.total_services_scanned || 0}</div>
+                            <div class="stat-label">Services</div>
+                        </div>
+                        <div class="stat-card critical">
+                            <div class="stat-number">${summary.critical || 0}</div>
+                            <div class="stat-label">Critical</div>
+                        </div>
+                        <div class="stat-card high">
+                            <div class="stat-number">${summary.high || 0}</div>
+                            <div class="stat-label">High</div>
+                        </div>
+                        <div class="stat-card medium">
+                            <div class="stat-number">${summary.medium || 0}</div>
+                            <div class="stat-label">Medium</div>
+                        </div>
+                        <div class="stat-card ok">
+                            <div class="stat-number">${stats.total_suspicious === 0 ? '0' : (stats.total_suspicious || 0)}</div>
+                            <div class="stat-label">Total Findings</div>
+                        </div>
+                    </div>
+                    <p class="info-note">Scan completed: ${escapeHtml(stats.scan_time || '')} | Errors: ${(data.errors || []).length}</p>
+                </div>
+            `;
+
+            // Suspicious findings
+            if (suspicious.length > 0) {
+                html += `
+                    <div class="section">
+                        <h2>Suspicious / Anomalous Entries (${suspicious.length})</h2>
+                        <div class="filter-tabs">
+                            <span class="filter-tab active" data-filter="all">All</span>
+                            <span class="filter-tab" data-filter="critical">Critical</span>
+                            <span class="filter-tab" data-filter="high">High</span>
+                            <span class="filter-tab" data-filter="medium">Medium</span>
+                            <span class="filter-tab" data-filter="low">Low</span>
+                        </div>
+                        <div id="findings-list">
+                `;
+                suspicious.forEach(f => {
+                    const sev = f.severity || 'medium';
+                    html += `
+                        <div class="finding-item severity-${sev}" data-severity="${sev}">
+                            <div class="finding-type">${escapeHtml(f.type)} <span class="severity-badge severity-${sev}">${sev}</span></div>
+                            <div class="finding-location">${escapeHtml(f.location)}</div>
+                            <div class="finding-value">${escapeHtml(f.name)} = ${escapeHtml((f.value || '').substring(0, 300))}${(f.value && f.value.length > 300) ? '...' : ''}</div>
+                            <div class="finding-reason">${escapeHtml(f.reason || '')}</div>
+                        </div>
+                    `;
+                });
+                html += '</div></div>';
+            } else {
+                html += `
+                    <div class="section">
+                        <h2>No Suspicious Entries Detected</h2>
+                        <div class="empty-state">
+                            No anomalies or malicious indicators found in scanned registry locations. Run scans periodically.
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Startup programs table
+            const startup = data.startup_programs || [];
+            if (startup.length > 0) {
+                html += `
+                    <div class="section">
+                        <h2>Startup Programs (${startup.length})</h2>
+                        <table class="data-table">
+                            <thead><tr><th>Name</th><th>Hive</th><th>Command</th><th>Status</th></tr></thead>
+                            <tbody>
+                `;
+                startup.forEach(s => {
+                    const status = s.suspicious ? `<span class="severity-badge severity-${s.severity || 'high'}">Suspicious</span>` : '<span style="color:var(--success-color)">OK</span>';
+                    html += `<tr>
+                        <td>${escapeHtml(s.name)}</td>
+                        <td>${escapeHtml(s.hive)}</td>
+                        <td style="max-width:400px;overflow:hidden;text-overflow:ellipsis;">${escapeHtml((s.command || '').substring(0, 80))}${(s.command && s.command.length > 80) ? '...' : ''}</td>
+                        <td>${status}</td>
+                    </tr>`;
+                });
+                html += '</tbody></table></div>';
+            }
+
+            // AppInit_DLLs
+            const appinit = data.appinit_dlls || [];
+            if (appinit.length > 0) {
+                html += `<div class="section"><h2>AppInit_DLLs</h2><table class="data-table"><thead><tr><th>Name</th><th>Value</th></tr></thead><tbody>`;
+                appinit.forEach(a => {
+                    html += `<tr><td>${escapeHtml(a.name)}</td><td style="word-break:break-all">${escapeHtml(a.value || '')}</td></tr>`;
+                });
+                html += '</tbody></table></div>';
+            }
+
+            // IFEO Debuggers
+            const ifeo = data.ifeo_debuggers || [];
+            if (ifeo.length > 0) {
+                html += `<div class="section"><h2>Image File Execution Options (IFEO) Debuggers</h2><table class="data-table"><thead><tr><th>Target</th><th>Debugger</th></tr></thead><tbody>`;
+                ifeo.forEach(i => {
+                    html += `<tr><td>${escapeHtml(i.target)}</td><td style="word-break:break-all">${escapeHtml(i.debugger || '')}</td></tr>`;
+                });
+                html += '</tbody></table></div>';
+            }
+
+            // LSA Packages
+            const lsa = data.lsa_packages || [];
+            if (lsa.length > 0) {
+                html += `<div class="section"><h2>LSA Packages</h2><table class="data-table"><thead><tr><th>Name</th><th>Value</th></tr></thead><tbody>`;
+                lsa.forEach(l => {
+                    html += `<tr><td>${escapeHtml(l.name)}</td><td style="word-break:break-all">${escapeHtml(l.value || '')}</td></tr>`;
+                });
+                html += '</tbody></table></div>';
+            }
+
+            // Services (suspicious only)
+            const services = (data.services || []).filter(s => s.suspicious);
+            if (services.length > 0) {
+                html += `<div class="section"><h2>Suspicious Services (${services.length})</h2><table class="data-table"><thead><tr><th>Name</th><th>ImagePath</th><th>Reason</th></tr></thead><tbody>`;
+                services.forEach(s => {
+                    html += `<tr><td>${escapeHtml(s.name)}</td><td style="word-break:break-all">${escapeHtml((s.path || '').substring(0, 120))}</td><td>${escapeHtml(s.reason || '')}</td></tr>`;
+                });
+                html += '</tbody></table></div>';
+            }
+
+            // Errors
+            if ((data.errors || []).length > 0) {
+                html += `<div class="section"><h2>Scan Warnings</h2><div class="info-note">${(data.errors || []).map(e => escapeHtml(e)).join('<br>')}</div></div>`;
+            }
+
+            document.getElementById('results').innerHTML = html;
+            document.getElementById('results').classList.add('active');
+
+            document.querySelectorAll('.filter-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    const filter = tab.dataset.filter;
+                    const list = document.getElementById('findings-list');
+                    if (list) {
+                        list.querySelectorAll('.finding-item').forEach(el => {
+                            el.style.display = filter === 'all' || el.dataset.severity === filter ? 'block' : 'none';
+                        });
+                    }
+                });
+            });
+        }
+    </script>
+</body>
+</html>
