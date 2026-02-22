@@ -1,5 +1,17 @@
 # 🔐 NetSight – Cybersecurity Analysis Platform
 
+![Python](https://img.shields.io/badge/Python-3.x-blue?logo=python)
+![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey)
+![Status](https://img.shields.io/badge/Status-Active-success)
+![License](https://img.shields.io/badge/License-Educational-orange)
+![Cybersecurity](https://img.shields.io/badge/Domain-Cybersecurity-red)
+![Forensics](https://img.shields.io/badge/Field-Digital%20Forensics-purple)
+![Open Source](https://img.shields.io/badge/Open%20Source-Yes-brightgreen)
+
+![GitHub stars](https://img.shields.io/github/stars/priyank5548/netsight-cybersecurity-platform?style=social)
+![GitHub forks](https://img.shields.io/github/forks/priyank5548/netsight-cybersecurity-platform?style=social)
+![GitHub last commit](https://img.shields.io/github/last-commit/priyank5548/netsight-cybersecurity-platform)
+
 ## 📌 Overview
 NetSight is a multi-module cybersecurity analysis platform designed to perform **digital forensics, threat detection, and system monitoring**.  
 It integrates web scanning, malware analysis, network reconnaissance, and host-based monitoring into a single dashboard.
